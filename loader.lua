@@ -27,6 +27,22 @@ titleLabel.Font = Enum.Font.Gotham
 titleLabel.TextTransparency = 1
 titleLabel.Parent = screenGui
 
+local LOADER_URL = "https://raw.githubusercontent.com/Its3rr0rsWRLD/Index/main/loader.json"
+local prefetchConfig, prefetchConfigErr
+local prefetchScript, prefetchScriptErr
+task.spawn(function()
+	local okRaw, raw = pcall(function() return game:HttpGet(LOADER_URL) end)
+	if not okRaw then prefetchConfigErr = raw return end
+	local okJson, parsed = pcall(function() return HttpService:JSONDecode(raw) end)
+	if not okJson then prefetchConfigErr = parsed return end
+	prefetchConfig = parsed
+
+	local placeId = tostring(game.PlaceId)
+	local gameData = parsed.games and parsed.games[placeId]
+	if not gameData or not gameData.url then return end
+	local okSrc, src = pcall(function() return game:HttpGet(gameData.url) end)
+	if okSrc then prefetchScript = src else prefetchScriptErr = src end
+end)
 
 local word = "Index"
 local frames = { "[ ]" }
@@ -34,7 +50,6 @@ for i = 1, #word do
 	table.insert(frames, "[ " .. word:sub(1, i) .. " ]")
 end
 
--- Fade in the brackets
 titleLabel.Text = frames[1]
 local fadeIn = TweenService:Create(titleLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 	TextTransparency = 0,
@@ -308,12 +323,12 @@ local function showActionDialog(message, onAccept)
 	})
 end
 
-local LOADER_URL = "https://raw.githubusercontent.com/Its3rr0rsWRLD/Index/main/loader.json"
-
-local success, config = pcall(function()
-	local raw = game:HttpGet(LOADER_URL)
-	return HttpService:JSONDecode(raw)
-end)
+local waitDeadline = os.clock() + 10
+while prefetchConfig == nil and prefetchConfigErr == nil and os.clock() < waitDeadline do
+	task.wait(0.05)
+end
+local success = prefetchConfig ~= nil
+local config = prefetchConfig
 
 if not success or not config then
 	showActionDialog(
