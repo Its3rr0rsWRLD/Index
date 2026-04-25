@@ -13,7 +13,7 @@
 ## Usage
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/MrNoodlesJr/Index/main/loader.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Its3rr0rsWRLD/Index/main/loader.lua"))()
 ```
 
 ## Supported Games

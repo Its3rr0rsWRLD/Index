@@ -308,7 +308,7 @@ local function showActionDialog(message, onAccept)
 	})
 end
 
-local LOADER_URL = "https://raw.githubusercontent.com/MrNoodlesJr/Index/main/loader.json"
+local LOADER_URL = "https://raw.githubusercontent.com/Its3rr0rsWRLD/Index/main/loader.json"
 
 local success, config = pcall(function()
 	local raw = game:HttpGet(LOADER_URL)
