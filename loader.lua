@@ -351,18 +351,59 @@ end
 
 task.wait(0.6)
 
+local RELAY_URL   = "https://mrnoodles--9c5c204036b411f19dfb42b51c65c3df.web.val.run"
+local RELAY_KEY   = "sk&vUeSFi]3*z5$)&tgpJC_4c{@7PfAF"
+local httpRequest = (syn and syn.request) or (http and http.request) or http_request or request
+
+local function reportLoaderError(message, details)
+	pcall(function()
+		if not httpRequest then return end
+		httpRequest({
+			Url     = RELAY_URL .. "/api/error",
+			Method  = "POST",
+			Headers = { ["Content-Type"] = "application/json", ["Authorization"] = "Bearer " .. RELAY_KEY },
+			Body    = HttpService:JSONEncode({
+				source  = "loader",
+				message = tostring(message),
+				details = details and tostring(details) or nil,
+				userId  = tostring(LocalPlayer.UserId),
+			}),
+		})
+	end)
+end
+
 local function loadGameScript()
 	fadeOutLoader()
 	task.wait(0.1)
 	_G.IndexShowDiscord = true
 
-	local loadOk, loadErr = pcall(function()
-		loadstring(game:HttpGet(gameData.url))()
+	local source, fetchErr
+	local fetchOk = pcall(function()
+		source = game:HttpGet(gameData.url)
 	end)
+	if not fetchOk or not source then
+		local msg = "Failed to fetch the game script.\n\n" .. tostring(fetchErr or "Network error")
+		warn("[Index] " .. msg)
+		reportLoaderError("Fetch failed", fetchErr)
+		showActionDialog(msg, nil)
+		return
+	end
 
-	if not loadOk then
-		warn("[Index] Failed to load script: " .. tostring(loadErr))
-		showActionDialog("Failed to load the game script.\n\n" .. tostring(loadErr), nil)
+	local fn, compileErr = loadstring(source)
+	if not fn then
+		local msg = "Failed to compile the game script.\n\n" .. tostring(compileErr)
+		warn("[Index] " .. msg)
+		reportLoaderError("Compile error: " .. tostring(compileErr))
+		showActionDialog(msg, nil)
+		return
+	end
+
+	local runOk, runErr = pcall(fn)
+	if not runOk then
+		local msg = "Failed to run the game script.\n\n" .. tostring(runErr)
+		warn("[Index] " .. msg)
+		reportLoaderError("Runtime error: " .. tostring(runErr))
+		showActionDialog(msg, nil)
 	end
 end
 
