@@ -3,8 +3,8 @@ REM Serve the Index repo root over HTTP so executors can loadstring
 REM Unobfuscated/Core.lua and Unobfuscated/DrivingEmpire.lua locally.
 REM
 REM In your executor, before running the script:
-REM   getgenv().INDEX_LOCAL = true
-REM   loadstring(game:HttpGet("http://localhost:8080/Unobfuscated/GAME.lua"))()
+echo getgenv().INDEX_LOCAL = true
+echo loadstring(game:HttpGet("http://localhost:8080/Unobfuscated/DrivingEmpire.lua"))()
 REM
 REM Auto-restarts the server after exit (e.g. after pushing updates or a
 REM crash). Press Ctrl+C twice to fully stop.
