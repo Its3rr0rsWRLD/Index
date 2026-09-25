@@ -403,6 +403,7 @@ local function loadGameScript()
 
 		local msg = "Failed to fetch the game script.\n\n" .. errStr
 		warn("[Index] " .. msg)
+		reportLoaderError("Fetch failed", errStr)
 		showActionDialog(msg, nil)
 		return
 	end
