@@ -377,14 +377,32 @@ local function loadGameScript()
 	task.wait(0.1)
 	_G.IndexShowDiscord = true
 
-	local source, fetchErr
-	local fetchOk = pcall(function()
-		source = game:HttpGet(gameData.url)
+	local source
+	local fetchOk, fetchErr = pcall(function()
+		return game:HttpGet(gameData.url)
 	end)
+	source = fetchOk and fetchErr or nil
+
+	local function handleDnsError(stage, errStr)
+		if string.find(errStr, "HttpError: DnsResolve") then
+			local d1 = pcall(function() return game:HttpGet("https://1.1.1.1") end)
+			local d2 = pcall(function() return game:HttpGet("https://google.com") end)
+			if not d1 and not d2 then
+				showActionDialog(stage .. "\n\nYour internet connection or DNS is failing. Please check your network/VPN settings.", nil)
+			else
+				showActionDialog(stage .. "\n\nIndex's domain failed to resolve. Please open a support ticket so it can be investigated.", nil)
+			end
+			return true
+		end
+		return false
+	end
+
 	if not fetchOk or not source then
-		local msg = "Failed to fetch the game script.\n\n" .. tostring(fetchErr or "Network error")
+		local errStr = tostring(fetchErr or "Network error")
+		if handleDnsError("Failed to fetch the game script.", errStr) then return end
+
+		local msg = "Failed to fetch the game script.\n\n" .. errStr
 		warn("[Index] " .. msg)
-		reportLoaderError("Fetch failed", fetchErr)
 		showActionDialog(msg, nil)
 		return
 	end
@@ -400,9 +418,12 @@ local function loadGameScript()
 
 	local runOk, runErr = pcall(fn)
 	if not runOk then
-		local msg = "Failed to run the game script.\n\n" .. tostring(runErr)
+		local errStr = tostring(runErr)
+		if handleDnsError("Failed to run the game script.", errStr) then return end
+
+		local msg = "Failed to run the game script.\n\n" .. errStr
 		warn("[Index] " .. msg)
-		reportLoaderError("Runtime error: " .. tostring(runErr))
+		reportLoaderError("Runtime error: " .. errStr)
 		showActionDialog(msg, nil)
 	end
 end
