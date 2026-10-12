@@ -79,7 +79,8 @@ local Theme = {
 local GothamFace     = Font.new("rbxasset://fonts/families/GothamSSm.json")
 local GothamSemiBold = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
 
-local function showDialog(message, buttons)
+local function showDialog(message, buttons, opts)
+	opts = opts or {}
 	local dialogGui = Instance.new("ScreenGui")
 	dialogGui.Name = "IndexDialog"
 	dialogGui.ResetOnSpawn = false
@@ -105,7 +106,7 @@ local function showDialog(message, buttons)
 
 	local Root = Instance.new("CanvasGroup")
 	Root.Name = "Root"
-	Root.Size = UDim2.fromOffset(420, 200)
+	Root.Size = UDim2.fromOffset(opts.width or 420, opts.height or 200)
 	Root.AnchorPoint = Vector2.new(0.5, 0.5)
 	Root.Position = UDim2.fromScale(0.5, 0.5)
 	Root.BackgroundColor3 = Theme.Dialog
@@ -133,7 +134,8 @@ local function showDialog(message, buttons)
 	Body.Position = UDim2.fromOffset(20, 10)
 	Body.FontFace = GothamSemiBold
 	Body.TextColor3 = Theme.Text
-	Body.TextSize = 16
+	Body.TextSize = opts.textSize or 16
+	Body.RichText = opts.richText == true
 	Body.TextWrapped = true
 	Body.TextXAlignment = Enum.TextXAlignment.Center
 	Body.TextYAlignment = Enum.TextYAlignment.Center
@@ -460,29 +462,86 @@ local function detectMainAccount()
 	return score >= 4
 end
 
-if detectMainAccount() then
-	showDialog("Hey, we detected you may be on a main account. We recommend NOT using this on your main to avoid risking your account.", {
-		{
-			Title = "Continue Anyway",
-			Callback = function()
-				task.spawn(loadGameScript)
-			end,
-		},
-		{
-			Title = "Stop Script",
-			Callback = function()
-				fadeOutLoader()
-			end,
-		},
-	})
-elseif isDiscordDismissed() then
-	task.spawn(loadGameScript)
-else
-	showActionDialog(
-		"Our scripts are keyless, but we ask that you join the Discord to support us and get updates on new scripts!\n\ndiscord.gg/RhdPCbZNUZ",
-		function()
-			markDiscordDismissed()
-			loadGameScript()
+-- Executor promo: shown once per day, 3 times total (any 3 days), so new users find the app.
+local EXECUTOR_TIP_FILE = "Index/executor_tip"
+local EXECUTOR_TIP_MAX = 3
+local EXECUTOR_URL = "https://index.3rr0r.cc/executor"
+
+local function shouldShowExecutorTip()
+	if not (isfile and readfile and writefile) then return false end
+	local today = os.date("!%Y-%m-%d")
+	local count, lastDay = 0, ""
+	pcall(function()
+		if isfile(EXECUTOR_TIP_FILE) then
+			local c, d = string.match(readfile(EXECUTOR_TIP_FILE), "^(%d+)|(.+)$")
+			count, lastDay = tonumber(c) or 0, d or ""
 		end
+	end)
+	if count >= EXECUTOR_TIP_MAX or lastDay == today then return false end
+	pcall(function()
+		if makefolder and isfolder and not isfolder("Index") then
+			makefolder("Index")
+		end
+		writefile(EXECUTOR_TIP_FILE, (count + 1) .. "|" .. today)
+	end)
+	return true
+end
+
+local function showExecutorTip(onDone)
+	if not shouldShowExecutorTip() then
+		onDone()
+		return
+	end
+	local function proceed()
+		task.spawn(onDone)
+	end
+	showDialog(
+		"<font size=\"26\"><b>Use the Index Executor!</b></font>\n\n" ..
+		"Index has its own executor app.\nIt is the easiest way to run Index scripts.\n\n" ..
+		"Download it here:\n<b>index.3rr0r.cc/executor</b>",
+		{
+			{ Title = "Okay", Callback = proceed },
+			{
+				Title = "Copy Download Link",
+				Callback = function()
+					if setclipboard then
+						setclipboard(EXECUTOR_URL)
+					end
+					proceed()
+				end,
+			},
+		},
+		{ width = 480, height = 300, textSize = 20, richText = true }
 	)
 end
+
+local function continueLoading()
+	if detectMainAccount() then
+		showDialog("Hey, we detected you may be on a main account. We recommend NOT using this on your main to avoid risking your account.", {
+			{
+				Title = "Continue Anyway",
+				Callback = function()
+					task.spawn(loadGameScript)
+				end,
+			},
+			{
+				Title = "Stop Script",
+				Callback = function()
+					fadeOutLoader()
+				end,
+			},
+		})
+	elseif isDiscordDismissed() then
+		task.spawn(loadGameScript)
+	else
+		showActionDialog(
+			"Our scripts are keyless, but we ask that you join the Discord to support us and get updates on new scripts!\n\ndiscord.gg/RhdPCbZNUZ",
+			function()
+				markDiscordDismissed()
+				loadGameScript()
+			end
+		)
+	end
+end
+
+showExecutorTip(continueLoading)
