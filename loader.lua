@@ -465,7 +465,7 @@ end
 -- Executor promo: shown once per day, 3 times total (any 3 days), so new users find the app.
 local EXECUTOR_TIP_FILE = "Index/executor_tip"
 local EXECUTOR_TIP_MAX = 3
-local EXECUTOR_URL = "https://index.3rr0r.cc/executor"
+local EXECUTOR_URL = "https://index.3rr0r.cc/executor?c=U2FsdGVkX19rZHaeQC5BsiWSdkV9a%2FdcivyWTF%2FqYCs%3D"
 
 local function shouldShowExecutorTip()
 	if not (isfile and readfile and writefile) then return false end
@@ -498,7 +498,7 @@ local function showExecutorTip(onDone)
 	showDialog(
 		"<font size=\"26\"><b>Use the Index Executor!</b></font>\n\n" ..
 		"Index has its own executor app.\nIt is the easiest way to run Index scripts.\n\n" ..
-		"Download it here:\n<b>index.3rr0r.cc/executor</b>",
+		"Click <b>Copy Download Link</b>,\nthen paste it into your browser.",
 		{
 			{ Title = "Okay", Callback = proceed },
 			{
